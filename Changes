@@ -1,0 +1,28 @@
+Revision history for Perl extension App::Packer.
+
+0.04  Thu Oct 24 16:31:42 2002
+	- Added and documented App::Packer::set_options
+	- Don't unload DynaLoaded DLL/so until after perl_destruct,
+	  to avoid destructors calling XS methods crashing.
+	- hints.ini file is now searched in the installation directory
+	- Documented hints.ini format in App::Packer::Frontend::ModuleInfo
+
+0.03  Mon Oct 21 19:42:31 2002
+	- New --add-module option to p2e.pl
+	- (HACK) p2e.pl will now search hints.ini file in the current
+	  directory; this feature is subject to change
+	- Now the ModuleInfo frontend will store superclasses of a module
+	  that are not require() directly (fr example those required
+	  via base.pm)
+	- now the loader correctly reports error that occur while
+	  use()ing or require()ing modules
+	- Added TODO
+
+0.02  Fri Oct 18 16:10:15 2002
+	- Added this file
+	- Pass command line arguments to the script
+	- Try blib before system directories
+	  when searching for the loader
+
+0.01  Wed Oct 16 20:10:22 2002
+	- First public release

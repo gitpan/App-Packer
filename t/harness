@@ -1,0 +1,29 @@
+#!perl -w
+
+use strict;
+use Test::Harness::Straps;
+my $straps = Test::Harness::Straps->new;
+my $pad = 20;
+local $ENV{PERL5LIB} = $straps->_INC2PERL5LIB;
+
+foreach my $f ( glob 't/*.t' ) {
+  local *IN;
+  open IN, "perl p2e.pl --run-exe $f |";
+  ( my $n = $f ) =~ s/\.t\w?$//;
+
+  print $n, ( '.' x ( $pad - length $n ) );
+
+  my %r = $straps->analyze_fh( $n, \*IN );
+
+  if( $r{skip_all} ) {
+    print "skipped: ", $r{skip_all}, "\n";
+  } elsif( $r{passing} ) {
+    print "ok\n";
+  } else {
+    print "FAILED\n";
+  }
+}
+
+# local variables:
+# mode: cperl
+# end:

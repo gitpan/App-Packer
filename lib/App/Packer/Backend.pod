@@ -1,0 +1,101 @@
+=head1 NAME
+
+App::Packer::Backend - backend interface for App::Packer
+
+=head1 DESCRIPTION
+
+There is no module named App::Packer::Backend; this is just
+an abstract interface all modules wishing to work as backends
+to App::Packer must conform to.
+
+Backend objects take as input a list of files to be stored inside an
+executable, and write the executable.
+
+=head1 RETURN VALUES
+
+All methods return a false value on failure, unless otherwise specified.
+
+=head1 METHODS
+
+Available methods.
+
+=head2 new
+
+  my $backend = App::Packer::Backend->new();
+
+Creates a new Backend instance. It I<must> be possible to call
+the constructor without any parameter.
+
+=head2 set_files
+
+  $backend->set_files( $data );
+
+Sets the files that are to be stored in the packed executable;
+each call to this method discards any previous information.
+File information is of the form: B<type =E<gt> value>
+where value is either a reference to file_info or a reference
+to an array of file_info.
+
+Each file_info has this structure:
+
+  { file     => full_path_to_file,
+    store_as => path_inside_the_app
+    used_by  => [ file_info1, file_info2, ... ],
+    ... }
+
+Valid file types are currently
+
+=over 4
+
+=item *
+
+main - the main script file; its value is a reference to a single
+file_info.
+
+=item *
+
+modules - modules used by the script
+
+=item *
+
+autload - autoload files
+
+=item *
+
+data - arbitrary files
+
+=item *
+
+shared - dynamic libraries, such as DLL/so files
+
+=back
+
+=head2 write
+
+  $backend->write( 'file.exe' );
+
+Write the executable file. This method should not change the provided file
+name in any way.
+
+=head2 set_options
+
+  $backend->set_options( name => value, ... );
+
+Set backend-dependent options; this is a list of C<name =E<gt> value> pairs
+(if the value is not interesting, it should be 0); standard options
+are:
+
+=over 4
+
+=item * verbose => numeric value
+
+Be verbose; the numeric value indicates verbosity level
+(0 = quiet).
+
+=back
+
+=cut
+
+# local variables:
+# mode: cperl
+# end:

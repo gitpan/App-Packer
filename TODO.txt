@@ -1,0 +1,10 @@
+* use the 'prerequisites' section in the hints file
+
+* allow multiple hints files
+
+* finish interface for Frontend and Backend; specifically
+  complete the list of standard options.
+
+* support for producing DLL/so
+
+* steal $^X code from perl 5.8.0

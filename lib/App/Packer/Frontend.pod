@@ -1,0 +1,76 @@
+=head1 NAME
+
+App::Packer::Frontend - frontend interface for App::Packer
+
+=head1 DESCRIPTION
+
+There is no module named App::Packer::Frontend; this is just
+an abstract interface all modules wishing to work as frontends
+for App::Packer must conform to.
+
+Frontend objects take as input the path to a file, and determine
+all the files (modules, autoload files, dynamic link libraraies...)
+the script depends upon.
+
+=head1 RETURN VALUES
+
+All methods return a false value on failure, unless otherwise specified.
+
+=head1 METHODS
+
+=head2 new
+
+  my $frontend = App::Packer::Frontend->new();
+
+Creates a new frontend instance. It I<must> be possible to call
+the constructor without any parameter.
+
+=head2 set_file
+
+  $frontend->set_file( 'file_name' );
+
+Sets the file whose dependencies are to be computed.
+
+=head2 calculate_info
+
+  $frontend->calculate_info();
+
+Computes the dependent files.
+
+=head2 get_files
+
+  my $data = $frontend->get_files();
+
+Returns the dependencies; the format is the same as the input to
+C<App::Packer::Backend::set_files>.
+
+It is necessary to call C<calculate_info> in order for this method to
+return any useful value.
+
+=head2 set_options
+
+  $frontend->set_options( name => value, ... );
+
+Set frontend-dependent options; this is a list of C<name =E<gt> value> pairs
+(if the value is not interesting, it should be 0); standard options
+are:
+
+=over 4
+
+=item * verbose => numeric value
+
+Be verbose; the numeric value indicates verbosity level
+(0 = quiet).
+
+=item * add_modules => array reference
+
+Add the listed modules (and their requisites) to the list of modules
+to be included in the executable.
+
+=back
+
+=cut
+
+# local variables:
+# mode: cperl
+# end:
