@@ -181,7 +181,7 @@ void my_loader_cleanup_perl()
 void my_loader_cleanup()
 {
     int i;
-
+#ifdef WIN32
     if( gs_dll_handles )
     {
         for( i = 0; gs_dll_handles[i] != NULL; ++i )
@@ -192,7 +192,7 @@ void my_loader_cleanup()
 
         free( gs_dll_handles );
     }
-
+#endif
     for( i = 0; i < gs_temp_files_count; ++i )
     {
         int ret = remove( gs_temp_files[i] );

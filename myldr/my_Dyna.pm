@@ -54,6 +54,18 @@ sub bootstrap {
   &$xs(@args);
 }
 
+# required by Win32::GUI, sigh :-(
+sub dl_find_symbol_anywhere
+{
+    my $sym = shift;
+    my $libref;
+    foreach $libref (@dl_librefs) {
+	my $symref = dl_find_symbol($libref,$sym);
+	return $symref if $symref;
+    }
+    return undef;
+}
+
 package XSLoader;
 
 sub load {

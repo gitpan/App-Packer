@@ -1,5 +1,32 @@
 package My_Loader;
 
+*CORE::GLOBAL::require = sub {
+  my $file = shift;
+  # version
+  if( $file =~ m/^\d+(?:\.\d+)?$/ ) { return $file <= $] }
+  # fix for Debian perl
+  if( $file =~ s{::}{/} )
+    { $file .= '.pm' }
+  else if( $file !~ m/\.\d+$/ ) {
+    { $file .= '.pm' }
+  # end fix
+  return 1 if $INC{$file};
+  my $stripped = $file;
+  $stripped =~ s{^/loader/0x[0123456789abcdefABCDEF]+/}{};
+  # require is always in scalar context before 5.9
+  my $result = eval { CORE::require $stripped };
+  delete $INC{$file} if $@ || !$result;
+  if( $@ ) {
+    if( !ref( $@ ) && $@ =~ m/^Can't locate \Q$stripped\E at/ ) {
+      my( $err, $line ); ( undef, $err, $line ) = caller;
+      $@ = "Can't locate $file at $err line $line\n";
+    }
+    die $@;
+  }
+  die "$file did not return a true value" unless $result;
+  return $result;
+};
+
 # straight from Symbol.pm
 my $genseq;
 my $genpkg = 'My_Loader::';

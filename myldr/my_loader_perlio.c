@@ -184,7 +184,7 @@ SV* do_get_glob( const char* file )
     SPAGAIN;
 
     if( !fh || count != 1 )
-        croak( "File not found: %s", file );
+        croak( "Can't locate %s", file );
 
     ret = do_open( POPs, fh );
     if( !ret )

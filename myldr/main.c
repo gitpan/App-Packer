@@ -119,7 +119,7 @@ int main( int argc, char **argv, char **env )
         my_loader_cleanup();
     }
 
-    delete_args( my_argc, my_argv );
+    /* delete_args( my_argc, my_argv ); */
 
     return init && pinit;
 }

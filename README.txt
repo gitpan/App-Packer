@@ -38,6 +38,17 @@ CODE OBFUSCATION
 look at how packing and unpacking is implemented: this means that
 adding encryption/obfuscation/whatever code to it is useless.
 
+SPEED AND CACHING
+
+  Some modules (notably Tk::* and Wx::*) take a very long time for their
+dependencies to be analysed, hence App::Packer uses caching to speed
+things up. This means that the first time you pack a Tk program,
+it will take a *very* long time, while subsequent packing of programs
+using Tk, will take much less time.
+  A side effect of using a cache is that sometimes the cache stores
+wrong results, hence you may need to clean the cache (it is a .packfile
+directory in one of $ENV{HOME}, $ENV{TMP}, $ENV{TEMP}.
+
 THANKS
 
 to Andrea Maestrutti for testing the first releases of this module.

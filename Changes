@@ -1,5 +1,16 @@
 Revision history for Perl extension App::Packer.
 
+0.05  Thu Oct 31 16:14:19 2002
+	- Changed message from "File not found: $file" to "Can't locate $file"
+	  to match perl error message.
+	- App::Packer::Frontend::ModuleInfo now uses the 'prerequisites'
+	  section of the hints.ini file.
+	- For perl 5.6, override CORE::GLOBAL::require() to work ariund the
+	  fact that it does not pass absolute file names to the @INC hooks.
+	- Added dl_find_symbol_anywhere to (hacked) DynaLoader.
+	- Added new 'skip' section to the hints.ini file.
+	- Updated hints file.
+
 0.04  Thu Oct 24 16:31:42 2002
 	- Added and documented App::Packer::set_options
 	- Don't unload DynaLoaded DLL/so until after perl_destruct,

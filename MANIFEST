@@ -1,4 +1,5 @@
 MANIFEST
+MANIFEST.SKIP
 README.txt
 TODO.txt
 Changes
@@ -32,6 +33,7 @@ scripts/file2c.pl
 t/00_simple.t
 t/01_data.t
 t/02_warnings.t
+t/03_version.t
 t/10_core_module.t
 t/11_vars.t
 t/12_warnings.t

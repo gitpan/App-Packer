@@ -1,5 +1,3 @@
-* use the 'prerequisites' section in the hints file
-
 * allow multiple hints files
 
 * finish interface for Frontend and Backend; specifically
@@ -8,3 +6,7 @@
 * support for producing DLL/so
 
 * steal $^X code from perl 5.8.0
+
+* load .al files, too, and search their subs, too
+
+* why does delete_args crash under linux?

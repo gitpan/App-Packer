@@ -7,7 +7,7 @@ use File::Spec::Functions qw(catdir catfile);
 use File::Basename;
 use Config;
 
-$VERSION = '0.04';
+$VERSION = '0.05';
 
 my $modinfo_class = 'App::Packer::Frontend::MyModuleInfo';
 # the default hints file
@@ -55,6 +55,9 @@ sub set_options {
   $this->{EXTRA_MODULES} = $args{add_modules};
 }
 
+# $this->_get_hints();
+#
+# return a Config::IniFiles object initialised with hints.ini
 sub _get_hints {
   return unless $root_hints_file;
   my $this = shift;
@@ -67,6 +70,26 @@ sub _get_hints {
   $this->{HINTS} = $root_hints_object;
 }
 
+# $this->_set_extra_modules( $module_info );
+#
+# call $module_info->extra_modules( ... ) if the hints file says so
+sub _set_extra_modules {
+  my $this = shift;
+  my $info = shift;
+  my $hints = $this->_get_hints;
+
+  if( $hints && $hints->SectionExists( 'prerequisites' ) ) {
+    foreach my $param ( $hints->Parameters( 'prerequisites' ) ) {
+      my( $re, @mods ) = $hints->val( 'prerequisites', $param );
+
+      $info->extra_modules( @mods ) if $info->name =~ m/$re/;
+    }
+  }
+}
+
+# $this->_get_info_object( $file_or_module );
+#
+# simple wrapper for Module::Info->new_.*( ... );
 sub _get_info_object {
   my $this = shift;
   my $module = shift;
@@ -84,18 +107,42 @@ sub _get_info_object {
   die( "Error while creating Module::Info object for '" . $module .
        "'" ) unless defined $info;
 
-  # XXX hack for Tk
-  if( $info->name =~ m/^Tk::/ ) {
-    $info->extra_modules( 'Tk' );
-  }
+  $this->_set_extra_modules( $info );
 
   return $info;
+}
+
+# $this->_skip( $module_name );
+#
+# true if the [skip] section mentions this module
+sub _skip {
+  my $this = shift;
+  my $module = shift;
+
+  if( !defined $this->{SKIP} ) {
+    my $hints = $this->_get_hints;
+    my %skip;
+
+    if( $hints && $hints->SectionExists( 'skip' ) ) {
+      foreach my $p ( $hints->Parameters( 'skip' ) ) {
+        my @mods = $hints->val( 'skip', $p );
+        @skip{@mods} = @mods;
+      }
+    }
+
+    $this->{SKIP} = \%skip;
+  }
+
+  return exists $this->{SKIP}{$module};
 }
 
 sub _info_for_module {
   my $this = shift;
   my $module = shift;
   my $required_by = shift;
+
+  # skip module if necessary
+  return if $this->_skip( $module );
 
   # if this module has already been required by some other module,
   # just update its 'used_by' field
@@ -226,6 +273,15 @@ An hints file looks like this:
   Tk
   EOT
 
+  [skip]
+  foo=<<EOT
+  Foo
+  Foo::Bar
+  EOT
+  xyz=<<EOT
+  Xyz::Dummy
+  EOT
+
   [Module::Name]
   modules_used=<<EOT
   My::Module
@@ -240,6 +296,11 @@ The first section lists module prerequisites: each entry has the form:
   prereq1
   prereq2
   EOT
+
+Where the entry name is arbitrary.
+
+The second section lists modules to be skipped. The entry name is
+arbitrary.
 
 =cut
 

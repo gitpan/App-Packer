@@ -69,7 +69,7 @@ SV* do_get_glob( const char* file )
     {
         my_arch_fh* fh = my_arch_open( file );
         if( !fh )
-            croak( "File not found: %s", file );
+            croak( "Can't locate %s", file );
         ret = sv_2mortal( newSViv( PTR2IV(fh) ) );
     }
 
