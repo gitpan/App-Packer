@@ -1,10 +1,18 @@
 #!/usr/bin/perl -w
 
+my $skip = 0;
+
 BEGIN {
-  print "1..0 # Skip does not work without PerlIO\n"
-    unless $] >= 5.008;
-  print "1..2\n";
+  unless( $] >= 5.008 ) {
+    print( "1..0 # Skip does not work without PerlIO\n" );
+    $skip = 1;
+  } else {
+    print "1..2\n";
+  }
 }
+
+exit 0 if $skip;
+
 print <main::DATA>;
 
 __DATA__

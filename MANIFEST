@@ -18,6 +18,7 @@ myldr/Makefile.PL
 myldr/main.c
 myldr/my_Dyna.pm
 myldr/my_arch.c
+myldr/my_arch_z.c
 myldr/my_arch.h
 myldr/my_loader.c
 myldr/my_loader.h

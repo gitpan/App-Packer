@@ -189,7 +189,7 @@ void my_loader_cleanup()
         for( i = 0; gs_dll_handles[i] != NULL; ++i )
         {
             if( !FreeLibrary( gs_dll_handles[i] ) )
-                fprintf( stderr, "Error in FreeLibrary\n" );
+                PerlIO_printf( stderr, "Error in FreeLibrary\n" );
         }
 
         free( gs_dll_handles );
@@ -199,8 +199,8 @@ void my_loader_cleanup()
     {
         int ret = remove( gs_temp_files[i] );
         if( ret != 0 )
-            fprintf( stderr, "remove '%s': %s", gs_temp_files[i],
-                     strerror( errno ) );
+            PerlIO_printf( stderr, "remove '%s': %s", gs_temp_files[i],
+                           strerror( errno ) );
         free( gs_temp_files[i] );
     }
 }

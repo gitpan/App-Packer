@@ -28,7 +28,7 @@ the constructor without any parameter.
 
 =head2 set_files
 
-  $backend->set_files( $data );
+  $backend->set_files( @data );
 
 Sets the files that are to be stored in the packed executable;
 each call to this method discards any previous information.

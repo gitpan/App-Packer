@@ -4,7 +4,7 @@ use strict;
 use vars qw($VERSION);
 use Config;
 
-$VERSION = 0.07;
+$VERSION = 0.08;
 
 sub new {
   my $ref = shift;
@@ -107,6 +107,13 @@ frontend and backend.
 to C<App::Packer::Backend::DemoPack>. You need to C<use My::Module;>
 if you pass C<My::Module> as frontend or backend, I<unless> you use
 the default value.
+
+Currently known frontends are C<App::Packer::Frontend::ModuleInfo>
+(default, distributed with C<App::Packer>), and C<Module::ScanDeps>.
+
+Currently known backends are C<App::Packer::Backend::DemoPack>
+(default, distributed with C<App::Packer>), and
+C<App::Packer::Backend::PAR>.
 
 =head2 set_file
 

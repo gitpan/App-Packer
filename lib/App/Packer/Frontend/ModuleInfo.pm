@@ -3,11 +3,11 @@ package App::Packer::Frontend::ModuleInfo;
 use strict;
 use vars '$VERSION';
 use App::Packer::Frontend::MyModuleInfo;
-use File::Spec::Functions qw(catdir catfile);
+use File::Spec::Functions qw(catdir catfile file_name_is_absolute);
 use File::Basename;
 use Config;
 
-$VERSION = '0.05';
+$VERSION = '0.08';
 
 my $modinfo_class = 'App::Packer::Frontend::MyModuleInfo';
 # the default hints file
@@ -53,7 +53,10 @@ sub set_options {
   my %args = @_;
 
   $this->{EXTRA_MODULES} = $args{add_modules};
+  $this->{VERBOSE}       = $args{verbose} || 0;
 }
+
+sub _verbose { $_[0]->{VERBOSE} }
 
 # $this->_get_hints();
 #
@@ -93,19 +96,32 @@ sub _set_extra_modules {
 sub _get_info_object {
   my $this = shift;
   my $module = shift;
+  my $path = $module;
   my $method = ( $module =~ m/\.\w+$/ ? 'new_from_file' : 'new_from_module' );
   my $info;
 
-  if( $this->{HINTS} && $this->{HINTS}->SectionExists( $module ) ) {
-    $info = App::Packer::Frontend::MyModuleInfo::Hints
-      ->$method( $module );
-    $info->set_hints( $this->{HINTS} ) if $info;
-  } else {
-    $info = $modinfo_class->$method( $module );
+  if( $method eq 'new_from_file' && !file_name_is_absolute( $module ) ) {
+    foreach my $d ( @INC ) {
+      my $abs = catfile( $d, $module );
+      if( -f $abs ) {
+        $path = $abs;
+        last;
+      }
+    }
   }
 
-  die( "Error while creating Module::Info object for '" . $module .
-       "'" ) unless defined $info;
+  if( $this->{HINTS} && $this->{HINTS}->SectionExists( $module ) ) {
+    $info = App::Packer::Frontend::MyModuleInfo::Hints
+      ->$method( $path );
+    $info->set_hints( $this->{HINTS} ) if $info;
+  } else {
+    $info = $modinfo_class->$method( $path );
+  }
+
+  unless( defined $info ) {
+    warn "Error while creating Module::Info object for '$module'";
+    return;
+  }
 
   $this->_set_extra_modules( $info );
 
@@ -156,13 +172,17 @@ sub _info_for_module {
   }
 
   # do the real work
-  my $info = $this->_get_info_object( $module );
+  my $info = $this->_get_info_object( $module ) || return;
+
+  print "Processing '$module'\n" if $this->_verbose >= 1;
 
   # @used may have duplicate entries, clean them up!
   my @used = ( $info->modules_used, $info->superclasses );
   my $file = $info->file;
   # store Foo::Bar as Foo/Bar.pm
-  my $store_as = ( join '/', split '::', $module ) . '.pm';
+  my $store_as = ( $module =~ m{/} ) ?
+                             $module :
+    ( join '/', split '::', $module ) . '.pm';
   my %used; @used{@used} = @used; @used = keys %used; # eliminate duplicates
 
   my $mobject =

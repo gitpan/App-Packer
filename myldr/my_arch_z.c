@@ -1,4 +1,5 @@
 #include "my_arch.h"
+#include "zlib.h"
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -6,6 +7,7 @@
 
 #define MAGIC1 0xbadf00d
 #define MAGIC2 0xdeadbeef
+#define READ_BUFFER_SIZE 512
 
 struct _my_arch_fh
 {
@@ -14,6 +16,9 @@ struct _my_arch_fh
     size_t start_offset;
     size_t length;
     size_t curr_offset; /* offset from start_offset */
+    char buffer[READ_BUFFER_SIZE];
+    size_t buffer_offset;
+    z_streamp zlib_stream;
 };
 
 struct _my_arch_file
@@ -144,6 +149,7 @@ int my_arch_close( my_arch_fh* fh )
         ;
 
     fclose( fh->stdio_fh );
+    inflateEnd( fh->zlib_stream );
     if( !cur )
     {
         if( descriptors == fh )
@@ -170,6 +176,7 @@ my_arch_fh* my_arch_open( const char* file_name )
     my_arch_file* cur;
     my_arch_fh* fh;
     FILE* sfh;
+    int zerr;
 
     for( cur = files; cur != NULL; cur = cur->next )
     {
@@ -191,6 +198,17 @@ my_arch_fh* my_arch_open( const char* file_name )
     fh->start_offset = cur->start_offset;
     fh->length = cur->length;
     fh->curr_offset = 0;
+    fh->buffer_offset = 0;
+
+    fh->zlib_stream = (z_streamp)malloc( sizeof(z_stream) );
+    fh->zlib_stream->next_in = fh->buffer + READ_BUFFER_SIZE;
+    fh->zlib_stream->avail_in = 0;
+    fh->zlib_stream->zalloc = Z_NULL;
+    fh->zlib_stream->zfree = Z_NULL;
+    fh->zlib_stream->opaque = Z_NULL;
+    zerr = inflateInit( fh->zlib_stream );
+    if( zerr != Z_OK )
+        my_arch_close( fh );
 
     fh->next = descriptors;
     descriptors = fh;
@@ -200,7 +218,7 @@ my_arch_fh* my_arch_open( const char* file_name )
 
 #undef FAIL
 
-int my_arch_read( my_arch_fh* fh, void* buffer, size_t count )
+int do_read( my_arch_fh* fh, char* buffer, size_t count )
 {
     if( count > fh->length - fh->curr_offset )
         count = fh->length - fh->curr_offset;
@@ -211,31 +229,46 @@ int my_arch_read( my_arch_fh* fh, void* buffer, size_t count )
     return count;
 }
 
+int my_arch_read( my_arch_fh* fh, void* buffer, size_t count )
+{
+    z_streamp zs = fh->zlib_stream;
+
+    zs->next_out = buffer;
+    zs->avail_out = count;
+
+    while( zs->avail_out )
+    {
+        int ret = inflate( zs, 0 );
+
+        if( ret == Z_STREAM_END )
+            break;
+        else if( ret == Z_STREAM_ERROR )
+            return -1;
+
+        /* read more input */
+        if( zs->avail_in == 0 )
+        {
+            if( zs->next_in == fh->buffer + READ_BUFFER_SIZE )
+            {
+                int count = do_read( fh, fh->buffer, READ_BUFFER_SIZE );
+
+                /* eof or error */
+                if( count <= 0 )
+                    break;
+
+                zs->avail_in = count;
+                zs->next_in = fh->buffer;
+            }
+            else
+                /* eof */
+                break;
+        }
+    }
+
+    return count - zs->avail_out;
+}
+
 long my_arch_seek( my_arch_fh* fh, long offset, int whence )
 {
-    unsigned long off;
-
-    switch( whence )
-    {
-    case SEEK_SET:
-        off = offset;
-        break;
-    case SEEK_CUR:
-        off = fh->curr_offset + offset;
-        break;
-    case SEEK_END:
-        off = fh->length + offset;
-        break;
-    default:
-        return -1;
-    }
-
-    if( off < 0 || off >= fh->length ) return -1;
-    if( fh->curr_offset != off )
-    {
-        fh->curr_offset = off;
-        fseek( fh->stdio_fh, fh->start_offset + fh->curr_offset, SEEK_SET );
-    }
-
-    return off;
+    return -1;
 }

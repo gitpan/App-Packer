@@ -113,6 +113,8 @@ XS(XS_My_Loader__Tie__DESTROY)
 #define skip_cr 0
 #define return_all 0
 
+#if 0
+
 XS(XS_My_Loader__Tie__READLINE)
 {
     dXSARGS;
@@ -191,5 +193,56 @@ XS(XS_My_Loader__Tie__READLINE)
     ST(0) = sv_2mortal( ret );
     XSRETURN( 1 );
 }
+
+#else
+
+/* read a char at a time */
+XS(XS_My_Loader__Tie__READLINE)
+{
+    dXSARGS;
+    IV i_fh = SvIV(SvRV(ST(0)));
+    my_arch_fh* fh = INT2PTR(my_arch_fh*,i_fh);
+    SV* ret = 0;
+    char buffer[1024];
+    size_t offset;
+    int stop = 0;
+
+    for(;;)
+    {
+        for( offset = 0; offset < sizeof(buffer) - 1; ++offset )
+        {
+            long count = my_arch_read( fh, buffer + offset, 1 );
+            if( !count ) break;
+            if( buffer[offset] == '\012' ) { stop = 1; ++offset; break; }
+        }
+
+        buffer[offset] = 0;
+        if( !ret && offset == 0 )
+        {
+            ret = &PL_sv_undef;
+            break;
+        }
+        else if( offset == 0 )
+        {
+            break;
+        }
+
+        if( !ret )
+        {
+            ret = newSVpvn( buffer, offset );
+        }
+        else
+        {
+            sv_catpvn( ret, buffer, offset );    
+        }
+
+        if( stop ) break;
+    }
+
+    ST(0) = sv_2mortal( ret );
+    XSRETURN( 1 );
+}
+
+#endif
 
 #endif /* perl 5.6 */

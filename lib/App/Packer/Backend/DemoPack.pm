@@ -8,22 +8,28 @@ use Config;
 use File::Copy qw(copy);
 use File::Spec::Functions qw(catfile catdir);
 
-$VERSION = '0.04';
+$VERSION = '0.08';
 
-# the loader
-my $exe_file;
+sub _search_exe {
+  my $name = shift;
 
-{
   # search for the loader in blib, then system directories
   my $blib = catdir( qw(blib arch) );
   my @dirs = ( $Config{installarchlib}, $Config{installsitearch} );
 
   foreach my $d ( $blib, @dirs ) {
     my $f = catfile( $d, 'auto', split( '::', __PACKAGE__ ),
-                     "embed$Config{_exe}" );
-    if( -f $f ) { $exe_file = $f; last }
+                     "$name$Config{_exe}" );
+    return $f if -f $f;
   }
+
+  return;
 }
+
+# the loader
+my $exe_file = _search_exe( 'embed' );
+my $exe_file_z = _search_exe( 'embed_z' );
+my $compress_zlib = eval { require Compress::Zlib; };
 
 # magic numbers
 sub MAGIC1() { 0xbadf00d }
@@ -38,6 +44,8 @@ sub new {
   my $ref = shift;
   my $class = ref( $ref ) || $ref;
   my $this = bless {}, $class;
+
+  $this->{COMPRESS} = $exe_file_z && $compress_zlib ? 6 : 0;
 
   return $this;
 }
@@ -61,7 +69,8 @@ sub _pp_hash($) {
 }
 
 sub _skip_unused {
-  my $files = $_[0];
+  my $this = shift;
+  my $files = shift;
   my @skip = grep { $_->{store_as} =~ m/DynaLoader\.pm|XSLoader\.pm$/ }
     @$files;
   my @remain = grep { $_->{store_as} !~ m/DynaLoader\.pm|XSLoader\.pm$/ }
@@ -69,7 +78,8 @@ sub _skip_unused {
 
   while( @remain && @skip ) {
     my $skip = pop @skip;
-#    print "Skipping: " . $skip->{store_as} . "\n";
+    print "Skipping: " . $skip->{store_as} . "\n"
+      if $this->_verbose >= 2;
 
     my $i1 = 0;
     foreach my $f ( @remain ) {
@@ -115,7 +125,7 @@ sub set_files {
     die "The file type '$k' is not supported";
   }
 
-  _skip_unused( $this->{FILES}->{SIMPLE} );
+  _skip_unused( $this, $this->{FILES}->{SIMPLE} );
 
   die "Must specify a main file"
     unless defined $this->{FILES}->{MAIN};
@@ -138,22 +148,53 @@ sub _do_append {
   return ( $data, $offset );
 }
 
-sub _store_file($$$$$) {
-  my( $file, $as, $data, $offset, $fh ) = @_;
-  my $len = -s $file;
+my %subst_map = ( $Config{privlib}  => '$LIB',
+                  $Config{archlib}  => '$ARCH',
+                  $Config{sitelib}  => '$SITE',
+                  $Config{sitearch} => '$SITEARCH',
+                );
+my $subst_pat = join '|', map { $_ = "\Q$_\E" } sort keys %subst_map;
 
-  print "File: $file=>$as,\toffset $offset,\tlength: $len\n";
-  copy( $file, $fh );
+sub _store_file($$$$$$$) {
+  my( $this, $file, $as, $data, $offset, $compress, $fh ) = @_;
+  my $len = -s $file;
+  my $deflated = '';
+
+  if( $compress ) {
+    local $/;
+    local *IN;
+
+    open IN, "< $file" or die "Unable to open '$file': $!";
+    binmode IN;
+    my $d = pack "Z*", Compress::Zlib::compress( <IN> );
+    close IN;
+    $deflated = "\tdeflated: " . int( length( $d ) / $len * 100 ) . "%";
+    print $fh $d;
+    $len = length( $d );
+  } else {
+    copy( $file, $fh );
+  }
+
+  if( $this->_verbose >= 2 ) {
+    ( my $f = $file ) =~ s/^($subst_pat)/$subst_map{$1}/o;
+
+    print "Storing: $f => $as\tlength: $len$deflated\n";
+  }
 
   ( $data, $offset ) = _do_append( $as, $data, $offset, $len );
 
   return ( $data, $offset );
 }
 
-sub _store_scalar($$$$$) {
-  my( $scalar, $as, $data, $offset, $fh ) = @_;
-  $scalar = pack "Z*", $scalar;
-  print $fh $scalar;
+sub _store_scalar($$$$$$$) {
+  my( $this, $scalar, $as, $data, $offset, $compress, $fh ) = @_;
+  if( $compress ) {
+    $scalar = pack "Z*", Compress::Zlib::compress( $scalar );
+    print $fh $scalar;
+  } else {
+    $scalar = pack "Z*", $scalar;
+    print $fh $scalar;
+  }
 
   ( $data, $offset ) = _do_append( $as, $data, $offset, length( $scalar ) );
 
@@ -174,16 +215,21 @@ sub _has_w {
 sub write {
   my $this = shift;
   my $file_name = shift;
+  my $compress = $this->{COMPRESS};
+  my $exe = $compress ? $exe_file_z : $exe_file;
   local *OUT;
 
   open OUT, "> $file_name" or die "open '$file_name': $!";
   binmode OUT;
 
-  die "unable to find loader" unless defined $exe_file && -f $exe_file;
+  print "Writing '$file_name'\n"
+    if $this->_verbose >= 1;
 
-  copy( $exe_file, \*OUT );
+  die "unable to find loader" unless defined $exe && -f $exe;
 
-  my $offset = -s $exe_file;
+  copy( $exe, \*OUT );
+
+  my $offset = -s $exe;
   my $data = '';
   my $metadata = '';
   my $count = 0;
@@ -193,21 +239,21 @@ sub write {
   $metadata .= "Warn=1\n" if _has_w( $this->{FILES}->{MAIN}->{file} );
 
   ( $data, $offset ) =
-    _store_file( $this->{FILES}->{MAIN}->{file},
+    _store_file( $this, $this->{FILES}->{MAIN}->{file},
                  $this->{FILES}->{MAIN}->{store_as},
-                 $data, $offset, \*OUT );
+                 $data, $offset, $compress, \*OUT );
   ++$count;
 
   foreach my $f ( @{$this->{FILES}->{SIMPLE}} ) {
     ( $data, $offset ) = 
-      _store_file( $f->{file}, $f->{store_as},
-                   $data, $offset, \*OUT );
+      _store_file( $this, $f->{file}, $f->{store_as},
+                   $data, $offset, $compress, \*OUT );
     ++$count;
   }
 
   ( $data, $offset ) =
-    _store_scalar( $metadata, 'My_Loader_Metadata',
-                   $data, $offset, \*OUT );
+    _store_scalar( $this, $metadata, 'My_Loader_Metadata',
+                   $data, $offset, $compress, \*OUT );
   ++$count;
 
   print OUT _pack_long( MAGIC2 );
@@ -221,6 +267,15 @@ sub write {
 
   return 1;
 }
+
+sub set_options {
+  my $this = shift;
+  my %args = @_;
+
+  $this->{VERBOSE} = $args{verbose} || 0;
+}
+
+sub _verbose { $_[0]->{VERBOSE} }
 
 1;
 

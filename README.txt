@@ -24,6 +24,16 @@ BINARIES (Win32)
 
 ppm install http://wwwstud.dsi.unive.it/~mbarbon/p2e/App-Packer.ppd
 
+COMPRESSION
+
+  The default backend can compress/uncompress files on the fly, provided
+thta it can find zlib (for decompression) and Compress::Zlib for compression.
+
+On Win32, you should unpack the zlib sources in the directory the Makefile.PL
+lies; under UNIX the Makefile will check /usr(/local)?(/lib|/include) for
+zlib.h/libz. If the autodetection fails, you can explicitky set the $ZLIB_*
+variables at the top op Makefile.PL.
+
 HINTS
 
   Some modules (notably Tk) do some magic that Module::Info can't
@@ -52,6 +62,14 @@ using Tk, will take much less time.
   A side effect of using a cache is that sometimes the cache stores
 wrong results, hence you may need to clean the cache (it is a .packfile
 directory in one of $ENV{HOME}, $ENV{TMP}, $ENV{TEMP}.
+
+KNOWN FRONTENDS/BACKENDS
+
+Frontends:
+  Module::ScanDeps
+
+Backends:
+  App::Packer::Backend::PAR (to be released soon)
 
 THANKS
 

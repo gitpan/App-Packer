@@ -69,9 +69,17 @@ int main( int argc, char **argv, char **env )
         pinit = my_loader_init_perl();
         if( pinit )
         {
+            GV* tmpgv;
+            SV* tmpsv;
             SV* inc_hook = my_loader_get_inc_hook();
             SV* errsv_save;
             int is_error = 0;
+
+            if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
+                tmpsv = GvSV(tmpgv);
+                sv_setpv(tmpsv, argv[0]);
+                SvSETMAGIC(tmpsv);
+            }
 
             if( inc_hook )
             {
@@ -112,11 +120,21 @@ int main( int argc, char **argv, char **env )
                     croak( SvPV_nolen( ERRSV ) );
             }
         }
+        else
+        {
+            PerlIO_printf( stderr, "myldr: internal error in "
+                           "my_loader_init_perl()\n");
+        }
 
         perl_destruct(my_perl);
         perl_free(my_perl);
 
         my_loader_cleanup();
+    }
+    else
+    {
+        PerlIO_printf( stderr, "myldr: internal error in "
+                       "my_loader_init()\n");
     }
 
     /* delete_args( my_argc, my_argv ); */

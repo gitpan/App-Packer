@@ -5,6 +5,26 @@ use ExtUtils::Embed;
 
 my $debug = 0;
 
+my( $zlib_i ) = ( '' );
+my $targets;
+
+if( $USE_ZLIB ) {
+  die "zlib autodetection failed, please look at Makefile.PL"
+    unless $ZLIB_LIB_DIR && $ZLIB_INC_DIR;
+
+  $zlib_i = "-I$ZLIB_INC_DIR ";
+  if( $^O eq 'MSWin32' ) {
+    $ZLIB_LINK_FLAGS = "$ZLIB_LIB_DIR\\zlib.lib ";
+  } else {
+    $ZLIB_LINK_FLAGS = "-L$ZLIB_LIB_DIR -lz ";
+  }
+
+  $targets = "embed$Config{_exe} embed_z$Config{_exe}"
+} else {
+  $ZLIB_LINK_FLAGS = ' ';
+  $targets = "embed$Config{_exe}"
+}
+
 print "Writing Makefile for the embed program\n";
 
 open OUT, "> Makefile" or die "open 'Makefile': $!";
@@ -35,7 +55,7 @@ if( $is_MSVC ) {
 $rm = $^O eq 'MSWin32' ? '$(PERL) -MExtUtils::Command -e rm_f' : 'rm';
 $mv = $^O eq 'MSWin32' ? '$(PERL) -MExtUtils::Command -e mv' : 'mv';
 
-my  $cflags = "$ccdebug$warn$pccflags";
+my  $cflags = "$zlib_i$ccdebug$warn$pccflags";
 my $ldflags = "$lddebug$pldflags";
 
 print OUT <<EOT;
@@ -49,12 +69,14 @@ CC=$cc
 CFLAGS=$cflags
 LDFLAGS=$ldflags
 
-OBJECTS=main$o my_arch$o my_loader_tie$o my_loader_perlio$o my_loader$o
+OBJECTS=main$o my_loader_tie$o my_loader_perlio$o my_loader$o
+ARCH=my_arch$o
+ARCH_Z=my_arch_z$o
 
 .c$o:
 	\$(CC) -c \$(CFLAGS) \$<
 
-all: embed$exe
+all: $targets
 
 clean:
 	-\$(RM) my_loader_tie_pl.c my_loader_perlio_pl.c my_Dyna_pm.c
@@ -63,11 +85,14 @@ clean:
 	\$(MV) Makefile Makefile.old
 
 realclean: clean
-	-\$(RM) embed$exe
+	-\$(RM) $targets
 	-\$(RM) Makefile Makefile.old
 
-embed$exe: \$(OBJECTS)
-	\$(LD) \$(OBJECTS) \$(LDFLAGS) $out\$@
+embed$exe: \$(OBJECTS) \$(ARCH)
+	\$(LD) \$(OBJECTS) \$(ARCH) \$(LDFLAGS) $out\$@
+
+embed_z$exe: \$(OBJECTS) \$(ARCH_Z)
+	\$(LD) \$(OBJECTS) \$(ARCH_Z) $ZLIB_LINK_FLAGS\$(LDFLAGS) $out\$@
 
 my_loader_tie_pl.c: my_loader_tie.pl $f2c
 	\$(PERL) $f2c my_loader_tie.pl \$@ load_me
@@ -80,6 +105,7 @@ my_Dyna_pm.c: my_Dyna.pm $f2c
 
 main$o: main.c my_loader.h
 my_arch$o: my_arch.c my_arch.h
+my_arch_z$o: my_arch_z.c my_arch.h
 my_loader$o: my_loader.c my_loader_priv.h my_Dyna_pm.c
 my_loader_tie$o: my_loader_tie.c my_loader.h my_loader_tie_pl.c
 my_loader_perlio$o: my_loader_perlio.c my_loader.h my_loader_perlio_pl.c

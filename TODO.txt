@@ -1,5 +1,7 @@
 * allow multiple hints files
 
+* __DATA__ with perl 5.6
+
 * finish interface for Frontend and Backend; specifically
   complete the list of standard options.
 
@@ -10,3 +12,7 @@
 * load .al files, too, and search their subs, too
 
 * why does delete_args crash under linux?
+
+* Compression
+  * better error handling/buffering in decompression
+  * don't load all the file in memory when compressing it!

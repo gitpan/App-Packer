@@ -1,3 +1,4 @@
 /?CVS/
-Makefile
-myldr/Makefile
+^Makefile
+^myldr/Makefile
+^zlib*

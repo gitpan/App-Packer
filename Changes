@@ -1,5 +1,15 @@
 Revision history for Perl extension App::Packer.
 
+0.08  Thu Nov 07 15:36:35 2002
+	- App::Packer will join efforts with PAR "soon";
+	  this release is just to keep the ball rolling.
+	- Handle 'require "Foo/Bar.xx";' correctly.
+	- Set $0 correctly (thanks to Autrijus Tang).
+	- Added support for compression, using zlib/Compress::Zlib.
+	- Implemented 'verbose' for the default frontend and backend,
+	  provided option for p2e.pl.
+	- Added p2e.pl options for selection frontend and backend.
+
 0.07  Sat Nov 02 14:15:44 2002
 	- Fix compilation with perl 5.8.0/ithreads.
 

@@ -8,7 +8,7 @@ local $ENV{PERL5LIB} = $straps->_INC2PERL5LIB;
 
 foreach my $f ( glob 't/*.t' ) {
   local *IN;
-  open IN, "perl p2e.pl --run-exe $f |";
+  open IN, "perl p2e.pl --quiet --run-exe $f |";
   ( my $n = $f ) =~ s/\.t\w?$//;
 
   print $n, ( '.' x ( $pad - length $n ) );
@@ -17,7 +17,7 @@ foreach my $f ( glob 't/*.t' ) {
 
   if( $r{skip_all} ) {
     print "skipped: ", $r{skip_all}, "\n";
-  } elsif( $r{passing} ) {
+  } elsif( $r{passing} && $r{seen} ) {
     print "ok\n";
   } else {
     print "FAILED\n";
