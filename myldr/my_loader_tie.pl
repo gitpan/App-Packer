@@ -7,7 +7,7 @@ package My_Loader;
   # fix for Debian perl
   if( $file =~ s{::}{/} )
     { $file .= '.pm' }
-  else if( $file !~ m/\.\d+$/ ) {
+  elsif( $file !~ m/\.\w+$/ )
     { $file .= '.pm' }
   # end fix
   return 1 if $INC{$file};
