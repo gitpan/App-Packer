@@ -4,7 +4,7 @@ use strict;
 use vars qw($VERSION);
 use Config;
 
-$VERSION = '0.10';
+$VERSION = '0.11';
 
 sub new {
   my $ref = shift;

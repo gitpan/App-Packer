@@ -1,5 +1,11 @@
 Revision history for Perl extension App::Packer.
 
+0.11  Wed Mar  5 15:22:44 CET 2003
+	- Do not add zlib path to linker flags, since we only search in
+	  standard locations.
+	- Provide a PerlIOl_fileno returning -1, otherwise the PerlIO loader
+	  may segfault calling a null function pointer.
+
 0.10  Tue Mar  4 14:36:39 CET 2003
 	- Search architecture-specific directories as well.
 	- Add DynaLoader::VERSION and XSLoader::VERSION.

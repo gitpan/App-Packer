@@ -15,7 +15,7 @@ if( $USE_ZLIB ) {
   if( $^O eq 'MSWin32' ) {
     $ZLIB_LINK_FLAGS = "$ZLIB_LIB_DIR\\zlib.lib ";
   } else {
-    $ZLIB_LINK_FLAGS = "-L$ZLIB_LIB_DIR -lz ";
+    $ZLIB_LINK_FLAGS = "-lz ";
   }
 
   $targets = "embed$Config{_exe} embed_z$Config{_exe}"

@@ -65,6 +65,11 @@ static SSize_t PerlIOl_my_arch_read( pTHX_ PerlIO *f, void* vbuf,
     return rd;
 }
 
+static IV PerlIOl_my_arch_fileno( pTHX_ PerlIO *f )
+{
+    return -1;
+}
+
 static IV PerlIOl_my_arch_seek( pTHX_ PerlIO *f, Off_t offset, int whence )
 {
     my_arch_fh* fh = my_get_fh( f );
@@ -101,7 +106,7 @@ PerlIO_funcs PerlIO_my_arch = {
     NULL,
     PerlIOBase_binmode,
     NULL,
-    NULL,
+    PerlIOl_my_arch_fileno,
     NULL,
     PerlIOl_my_arch_read,
     NULL,
