@@ -2,7 +2,7 @@
 
 use strict;
 use Config;
-use ExtUtils::MakeMaker;
+use ExtUtils::Embed ();
 use vars qw($ZLIB_LIB_DIR $ZLIB_INC_DIR $ZLIB_LINK_FLAGS $USE_ZLIB);
 
 # set these to meaningful values if autodetection fails
@@ -12,6 +12,19 @@ $ZLIB_INC_DIR = undef;    # e.g. /opt/zlib/include
 $ZLIB_LINK_FLAGS = undef; # e.g. -L/opt/zlib/lib -lz
 
 autodetect_zlib() if $USE_ZLIB || !defined $USE_ZLIB;
+
+# this works around an anomaly in Debian (or EU::Embed, or whatever...)
+my $ccopts;
+my $ldopts;
+sub ccopts { $ccopts }
+sub ldopts { $ldopts }
+
+BEGIN {
+  $ccopts = ExtUtils::Embed::ccopts;
+  $ldopts = ExtUtils::Embed::ldopts;
+}
+
+use ExtUtils::MakeMaker;
 
 WriteMakefile( NAME          => 'App::Packer',
                ABSTRACT_FROM => 'lib/App/Packer.pm',
@@ -26,6 +39,7 @@ WriteMakefile( NAME          => 'App::Packer',
                BINARY_LOCATION => 'App-Packer.tar.gz',
                # MakeMaker guesses wrong...
                NEEDS_LINKING => 0,
+               EXE_FILES     => [ 'p2e.pl' ],
              );
 
 package MY;
@@ -36,7 +50,7 @@ use File::Spec::Functions qw(catfile catdir);
 sub test {
   return <<'EOT'
 
-test: all
+test : all
 	$(PERL) "-Mblib" "t/harness"
 
 EOT

@@ -1,6 +1,12 @@
 Revision history for Perl extension App::Packer.
 
-0.08  Thu Nov 07 15:36:35 2002
+0.09  Sun Nov 17 16:21:03 CET 2002
+	- Fix build on Debian GNU/Linux 3.0.
+	- Install p2e.pl in the path.
+	- Use /proc/self/exe where available, to determine executable path.
+	- Modify test harness to hopefully play nice with CPAN testers.
+
+0.08  Thu Nov 07 15:36:35 CET 2002
 	- App::Packer will join efforts with PAR "soon";
 	  this release is just to keep the ball rolling.
 	- Handle 'require "Foo/Bar.xx";' correctly.
@@ -10,14 +16,14 @@ Revision history for Perl extension App::Packer.
 	  provided option for p2e.pl.
 	- Added p2e.pl options for selection frontend and backend.
 
-0.07  Sat Nov 02 14:15:44 2002
+0.07  Sat Nov 02 14:15:44 CEST 2002
 	- Fix compilation with perl 5.8.0/ithreads.
 
-0.06  Thu Oct 31 19:38:27 2002
+0.06  Thu Oct 31 19:38:27 CEST 2002
 	- 0.05 was completely broken due to a silly typo in
 	  a last minute change.
 
-0.05  Thu Oct 31 16:14:19 2002
+0.05  Thu Oct 31 16:14:19 CEST 2002
 	- Changed message from "File not found: $file" to "Can't locate $file"
 	  to match perl error message.
 	- App::Packer::Frontend::ModuleInfo now uses the 'prerequisites'
@@ -28,14 +34,14 @@ Revision history for Perl extension App::Packer.
 	- Added new 'skip' section to the hints.ini file.
 	- Updated hints file.
 
-0.04  Thu Oct 24 16:31:42 2002
+0.04  Thu Oct 24 16:31:42 CEST 2002
 	- Added and documented App::Packer::set_options
 	- Don't unload DynaLoaded DLL/so until after perl_destruct,
 	  to avoid destructors calling XS methods crashing.
 	- hints.ini file is now searched in the installation directory
 	- Documented hints.ini format in App::Packer::Frontend::ModuleInfo
 
-0.03  Mon Oct 21 19:42:31 2002
+0.03  Mon Oct 21 19:42:31 CEST 2002
 	- New --add-module option to p2e.pl
 	- (HACK) p2e.pl will now search hints.ini file in the current
 	  directory; this feature is subject to change
@@ -46,11 +52,11 @@ Revision history for Perl extension App::Packer.
 	  use()ing or require()ing modules
 	- Added TODO
 
-0.02  Fri Oct 18 16:10:15 2002
+0.02  Fri Oct 18 16:10:15 CEST 2002
 	- Added this file
 	- Pass command line arguments to the script
 	- Try blib before system directories
 	  when searching for the loader
 
-0.01  Wed Oct 16 20:10:22 2002
+0.01  Wed Oct 16 20:10:22 CEST 2002
 	- First public release

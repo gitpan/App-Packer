@@ -107,11 +107,23 @@ int my_loader_init_perl()
 
         if( !my_arch_init( buffer ) )
             return 0;
-#elif 1 || defined(HAS_PROCSELFEXE) || defined(ABSOLUTE_PATH_WORKS)
+#elif defined(HAS_PROCSELFEXE) || defined(ABSOLUTE_PATH_WORKS)
         SV* caret_x = get_sv( "\030", 0 );
 
         if( !my_arch_init( SvPV_nolen( caret_x ) ) )
             return 0;
+#elif defined(HAS_READLINK)
+        SV* path = eval_pv( "( -l '/proc/self/exe' ) ?"
+                            "    readlink '/proc/self/exe' :"
+                            "    undef;", 0 );
+        if( !SvOK( path ) )
+            return 0;
+        if( !my_arch_init( SvPV_nolen( path ) ) )
+        {
+            SvREFCNT_dec( path );
+            return 0;
+        }
+       SvREFCNT_dec( path );
 #else
     #error NO_PROC_SELF_EXE
 #endif

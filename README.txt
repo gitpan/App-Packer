@@ -11,8 +11,6 @@ LIMITATIONS
   (available at http://wwwstud.dsi.unive.it/~mbarbon/p2e/)
 * it won't cripple (a.k.a. protect) your source code (see below).
 * DATA filehandle will not work with perl 5.6.x
-* requires a working $^X (for example under Linux you need to
-  invoke the executable using either ./my or /path/to/my)
 * p2e.pl does not allow you to add/remove arbitrary files
 * if the perl you compiled against uses a shared libperl.so/perl.dll
   you need to ship it with the executable

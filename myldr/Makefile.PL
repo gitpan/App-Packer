@@ -1,7 +1,6 @@
 #!/usr/bin/perl -w
 
 use strict;
-use ExtUtils::Embed;
 
 my $debug = 0;
 
