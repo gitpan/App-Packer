@@ -1,5 +1,15 @@
 Revision history for Perl extension App::Packer.
 
+0.10  Tue Mar  4 14:36:39 CET 2003
+	- Search architecture-specific directories as well.
+	- Add DynaLoader::VERSION and XSLoader::VERSION.
+	- Fix prototype for "require".
+	- Fake DynaLoader and XSLoader version.
+	- Under Win32, call FreeLibrary() as many times as LoadLibraray
+	  was, otherwise unlinking will fail.
+	- Do not bootstrap() modules more than once.
+	- Use DB_File in preference to SDBM_File when it is available.
+
 0.09  Sun Nov 17 16:21:03 CET 2002
 	- Fix build on Debian GNU/Linux 3.0.
 	- Install p2e.pl in the path.

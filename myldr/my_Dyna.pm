@@ -18,12 +18,14 @@ sub croak { die @_ }
 my $sep = $^O eq 'MSWin32' ? '\\' : '/';
 my $dlext = $^O eq 'MSWin32' ? 'dll' : 'so';
 
+my %booted;
+
 # does not handle .bs files
 sub bootstrap {
   boot_DynaLoader('DynaLoader') if defined(&boot_DynaLoader) &&
                                   !defined(&dl_error);
-
   my $module = $_[0];
+  return if $booted{$module};
   my @modparts = split(/::/,$module);
   my $tmp = $ENV{TEMP} || $ENV{TMP} || '/tmp';
   die "Can't find temporary directory '$tmp'" unless -d $tmp;
@@ -49,6 +51,7 @@ sub bootstrap {
 
  boot:
   my $xs = dl_install_xsub("${module}::bootstrap", $boot_symbol_ref, $file);
+  $booted{$module} = 1;
 
   # See comment block above
   &$xs(@args);

@@ -6,9 +6,23 @@ use File::Spec::Functions qw(catfile catdir);
 use Memoize;
 use Config;
 use Fcntl;
-use Memoize::SDBM_File;
 use File::Path;
 use File::stat;
+
+my $tie_class;
+{
+  foreach my $pair ( [ 'DB_File.pm',   'DB_File' ],
+                     [ 'SDBM_File.pm', 'Memoize::SDBM_File' ],
+                    ) {
+    eval {
+      require( $pair->[0] );
+      $tie_class = $pair->[1];
+      require Memoize::SDBM_File if $pair->[1] eq 'Memoize::SDBM_File';
+    };
+    # warn $@ if $@; # DEBUGGING
+    last if $tie_class;
+  }
+}
 
 my $cache_base = $ENV{HOME} || $ENV{TEMP} || $ENV{TMP};
 my $cache_dir = catdir( $cache_base, '.packer' );
@@ -18,10 +32,10 @@ my $superclasses_file = catfile( $cache_dir, 'superclasses' );
 mkpath( $cache_dir ) unless -d $cache_dir;
 
 my( %modules_used, %superclasses );
-tie %modules_used, 'Memoize::SDBM_File',
+tie %modules_used, $tie_class,
   $modules_file, O_RDWR|O_CREAT, 0666
   or die "Can't create cache file: $!";
-tie %superclasses, 'Memoize::SDBM_File',
+tie %superclasses, $tie_class,
   $superclasses_file, O_RDWR|O_CREAT, 0666
   or die "Can't create cache file: $!";
 
@@ -63,8 +77,20 @@ sub superclasses {
 
 sub superclasses_xx {
   my $this = shift;
-  # warn $this->name;
   return join '!', $this->SUPER::superclasses;
+}
+
+sub extra_modules {
+  my $this = shift;
+
+  $this->{EXTRA_MODULES} = @_ ? [ @_ ] : undef;
+}
+
+sub _get_extra_arguments {
+  my $this = shift;
+
+  return '' unless $this->{EXTRA_MODULES};
+  return join ' ', map { qq{"-M$_"} } @{$this->{EXTRA_MODULES}};
 }
 
 # find the 'auto' diretory; should probably use $Config for more safety,

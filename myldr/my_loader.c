@@ -15,6 +15,7 @@
 #include "my_arch.h"
 #include "my_loader.h"
 #include "my_loader_priv.h"
+#include "xyz.h"
 
 /* -------------------------------------------------------------------------
  * parse metadata file, return the value corresponding to the given name
@@ -145,6 +146,16 @@ int my_loader_init_perl()
     if( !do_eval( load_me_2 ) )
         return 0;
 
+    {
+        SV* tmp;
+
+        tmp = get_sv( "DynaLoader::VERSION", 1 );
+        sv_setpv( tmp, DYNALOADER_VERSION );
+
+        tmp = get_sv( "XSLoader::VERSION", 1 );
+        sv_setpv( tmp, XSLOADER_VERSION );
+    }
+
     newXS( "My_Loader::get_file", XS_My_Loader__get_file, file );
     newXS( "My_Loader::cleanup_file", XS_My_Loader__cleanup_file, file );
 
@@ -200,8 +211,10 @@ void my_loader_cleanup()
     {
         for( i = 0; gs_dll_handles[i] != NULL; ++i )
         {
-            if( !FreeLibrary( gs_dll_handles[i] ) )
-                PerlIO_printf( stderr, "Error in FreeLibrary\n" );
+            while( FreeLibrary( gs_dll_handles[i] ) );
+#if 0
+                fprintf( stderr, "Error in FreeLibrary\n" );
+#endif
         }
 
         free( gs_dll_handles );
@@ -210,9 +223,11 @@ void my_loader_cleanup()
     for( i = 0; i < gs_temp_files_count; ++i )
     {
         int ret = remove( gs_temp_files[i] );
+#if 0
         if( ret != 0 )
-            PerlIO_printf( stderr, "remove '%s': %s", gs_temp_files[i],
-                           strerror( errno ) );
+            fprintf( stderr, "remove '%s': %s", gs_temp_files[i],
+                     strerror( errno ) );
+#endif
         free( gs_temp_files[i] );
     }
 }

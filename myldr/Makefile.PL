@@ -27,6 +27,7 @@ if( $USE_ZLIB ) {
 print "Writing Makefile for the embed program\n";
 
 open OUT, "> Makefile" or die "open 'Makefile': $!";
+open OUT_H, "> xyz.h" or die "open 'xyz.h': $!";
 
 my $exe = $Config{_exe};
 my $o = $Config{_o};
@@ -35,6 +36,21 @@ my $pldflags = ldopts;
 my $ld = $Config{ld};
 my $cc = $Config{cc};
 my $f2c = "../scripts/file2c.pl";
+
+require DynaLoader;
+
+my $dynaloader_version = DynaLoader->VERSION;
+my $xsloader_version = 0;
+
+eval {
+  require XSLoader;
+  $xsloader_version = XSLoader->VERSION;
+};
+
+print OUT_H <<EOT;
+#define DYNALOADER_VERSION "$dynaloader_version"
+#define XSLOADER_VERSION "$xsloader_version"
+EOT
 
 my( $out, $ccdebug, $lddebug, $warn, $rm, $mv );
 
@@ -79,7 +95,7 @@ all: $targets
 
 clean:
 	-\$(RM) my_loader_tie_pl.c my_loader_perlio_pl.c my_Dyna_pm.c
-	-\$(RM) *$o
+	-\$(RM) *$o xyz.h
 	-\$(RM) *.opt *.pdb
 	\$(MV) Makefile Makefile.old
 
@@ -112,6 +128,9 @@ my_loader_perlio$o: my_loader_perlio.c my_loader.h my_loader_perlio_pl.c
 .SUFFIXES: $o
 
 EOT
+
+close OUT;
+close OUT_H;
 
 # local variables:
 # mode: cperl

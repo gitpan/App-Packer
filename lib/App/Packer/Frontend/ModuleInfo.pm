@@ -16,7 +16,8 @@ my $root_hints_object;
 
 {
   # search for the hints file in blib, then system directories
-  my @dirs = ( $Config{installprivlib}, $Config{installsitelib} );
+  my @dirs = ( $Config{installprivlib}, $Config{installsitelib},
+               $Config{installarchlib}, $Config{installsitearch} );
   my $blib = catdir( qw(blib lib) );
 
   foreach my $d ( $blib, @dirs ) {
@@ -119,10 +120,12 @@ sub _get_info_object {
   }
 
   unless( defined $info ) {
-    warn "Error while creating Module::Info object for '$module'";
+    warn "Error while creating Module::Info object for '$module'"
+      if $this->_verbose >= 0;
     return;
   }
 
+  $info->die_on_compilation_error( 1 );
   $this->_set_extra_modules( $info );
 
   return $info;
@@ -234,12 +237,18 @@ sub calculate_info {
   $this->_get_hints;
   my $info = $this->_get_info_object( $this->{FILE} );
 
-  my @used = $info->modules_used;
-  push @used, @{$this->{EXTRA_MODULES}}
-    if $this->{EXTRA_MODULES};
+  eval {
+    my @used = $info->modules_used;
+    push @used, @{$this->{EXTRA_MODULES}}
+      if $this->{EXTRA_MODULES};
 
-  foreach my $m ( @used ) { $this->_info_for_module( $m,
-                                                     $this->{FILES}->{MAIN} ) }
+    foreach my $m ( @used ) { $this->_info_for_module
+                                ( $m, $this->{FILES}->{MAIN} ) }
+  };
+  if( $@ ) {
+    warn $@;
+    return 0;
+  }
 
   return 1;
 }

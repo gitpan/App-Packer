@@ -1,11 +1,11 @@
 package My_Loader;
 
-*CORE::GLOBAL::require = sub {
+sub my_require(*) {
   my $file = shift;
   # version
   if( $file =~ m/^\d+(?:\.\d+)?$/ ) { return $file <= $] }
   # fix for Debian perl
-  if( $file =~ s{::}{/} )
+  if( $file =~ s{::}{/}g )
     { $file .= '.pm' }
   elsif( $file !~ m/\.\w+$/ )
     { $file .= '.pm' }
@@ -26,6 +26,8 @@ package My_Loader;
   die "$file did not return a true value" unless $result;
   return $result;
 };
+
+*CORE::GLOBAL::require = \&my_require;
 
 # straight from Symbol.pm
 my $genseq;
