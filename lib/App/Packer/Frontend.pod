@@ -67,6 +67,10 @@ Be verbose; the numeric value indicates verbosity level
 Add the listed modules (and their requisites) to the list of modules
 to be included in the executable.
 
+=item * command_line => array reference
+
+Extra options (typically passed via command line arguments).
+
 =back
 
 =cut

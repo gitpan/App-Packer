@@ -92,6 +92,10 @@ are:
 Be verbose; the numeric value indicates verbosity level
 (0 = quiet).
 
+=item * command_line => array reference
+
+Extra options (typically passed via command line arguments).
+
 =back
 
 =cut

@@ -8,15 +8,13 @@
 #undef free
 
 #include "my_loader.h"
+#include "perlxsi.c"
 
 #ifdef WIN32
 #define snprintf _snprintf
 #endif
 
 static PerlInterpreter *my_perl;
-
-static void xs_init( pTHX );
-EXTERN_C void boot_DynaLoader( pTHX_ CV* cv );
 
 char** prepare_args( int argc, char** argv, int* my_argc )
 {
@@ -56,30 +54,48 @@ int main( int argc, char **argv, char **env )
     char buffer[1024];
     int init = 0, pinit = 0;
 
+#if defined(USE_ITHREADS)
+    /* XXX Ideally, this should really be happening in perl_alloc() or
+     * perl_construct() to keep libperl.a transparently fork()-safe.
+     * It is currently done here only because Apache/mod_perl have
+     * problems due to lack of a call to cancel pthread_atfork()
+     * handlers when shared objects that contain the handlers may
+     * be dlclose()d.  This forces applications that embed perl to
+     * call PTHREAD_ATFORK() explicitly, but if and only if it hasn't
+     * been called at least once before in the current process.
+     * --GSAR 2001-07-20 */
+    PTHREAD_ATFORK(Perl_atfork_lock,
+                   Perl_atfork_unlock,
+                   Perl_atfork_unlock);
+#endif
+
     my_argv = prepare_args( argc, argv, &my_argc );
     init = my_loader_init();
     if( init )
     {
+        GV* tmpgv;
+        SV* tmpsv;
+
         my_perl = perl_alloc();
         perl_construct(my_perl);
         perl_parse(my_perl, xs_init, my_argc, my_argv, (char **)NULL);
 
+        /* TAINT; */
+
         perl_run(my_perl);
+
+        if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
+            tmpsv = GvSV(tmpgv);
+            sv_setpv(tmpsv, argv[0]);
+            SvSETMAGIC(tmpsv);
+        }
 
         pinit = my_loader_init_perl();
         if( pinit )
         {
-            GV* tmpgv;
-            SV* tmpsv;
             SV* inc_hook = my_loader_get_inc_hook();
             SV* errsv_save;
             int is_error = 0;
-
-            if ((tmpgv = gv_fetchpv("0", TRUE, SVt_PV))) {/* $0 */
-                tmpsv = GvSV(tmpgv);
-                sv_setpv(tmpsv, argv[0]);
-                SvSETMAGIC(tmpsv);
-            }
 
             if( inc_hook )
             {
@@ -92,7 +108,8 @@ int main( int argc, char **argv, char **env )
                 av_push( inc, inc_hook );
 
                 size = snprintf( buffer, sizeof(buffer),
-                                 "my $x = do '%s';die $@ if !defined $x && $@;",
+                                 "my $x = do '%s';"
+                                 "die $@ if !defined $x && $@;",
                                  my_loader_get_script_name() );
                 if( size < 0 )
                 {
@@ -140,12 +157,4 @@ int main( int argc, char **argv, char **env )
     /* delete_args( my_argc, my_argv ); */
 
     return init && pinit;
-}
-
-EXTERN_C void
-xs_init(pTHX)
-{
-    char *file = __FILE__;
-    /* DynaLoader is a special case */
-    newXS("DynaLoader::boot_DynaLoader", boot_DynaLoader, file);
 }

@@ -273,6 +273,13 @@ sub set_options {
   my %args = @_;
 
   $this->{VERBOSE} = $args{verbose} || 0;
+  if( $args{command_line} ) {
+    foreach my $a ( @{$args{command_line}} ) {
+      if( $a eq 'no-compress' ) {
+        $this->{COMPRESS} = 0;
+      }
+    }
+  }
 }
 
 sub _verbose { $_[0]->{VERBOSE} }

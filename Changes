@@ -1,5 +1,13 @@
 Revision history for Perl extension App::Packer.
 
+0.12  Wed Mar 12 16:49:52 CET 2003
+	- Fixed building with non-GCC, non-MSVC compilers.
+	- Made myldr more robust, and reclaimed (at least) Solaris.
+	- Added -Of and -Ob options to p2e, to pass frontand and/or
+	  backend-specific options to frontend and backend.
+	- Added "no-compress" option to default backend to disable
+	  compression (to speed up startup).
+
 0.11  Wed Mar  5 15:22:44 CET 2003
 	- Do not add zlib path to linker flags, since we only search in
 	  standard locations.

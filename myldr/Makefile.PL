@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
+use Config;
 
 my $debug = 0;
 
@@ -50,21 +51,30 @@ eval {
 print OUT_H <<EOT;
 #define DYNALOADER_VERSION "$dynaloader_version"
 #define XSLOADER_VERSION "$xsloader_version"
+#define PATH_SEP "$Config{path_sep}"
 EOT
+
+ExtUtils::Embed::xsinit();
 
 my( $out, $ccdebug, $lddebug, $warn, $rm, $mv );
 
 my $is_MSVC = $cc =~ m/^cl/;
+my $is_GCC = $cc =~ m/^gcc/;
 if( $is_MSVC ) {
   $out = '-out:';
   $ccdebug = $debug ? '-Zi ' : '';
   $lddebug = $debug ? '-debug ' : '-release ';
   $warn = '-W3';
-} else {
+} elsif( $is_GCC ) {
   $out = '-o ';
   $ccdebug = $debug ? '-g ' : '';
   $lddebug = $debug ? '' : '-s ';
   $warn = '-Wall -Wno-comments ';
+} else {
+  $out = '-o ';
+  $ccdebug = ' ';
+  $lddebug = ' ';
+  $warn = ' ';
 }
 
 $rm = $^O eq 'MSWin32' ? '$(PERL) -MExtUtils::Command -e rm_f' : 'rm';
@@ -95,7 +105,7 @@ all: $targets
 
 clean:
 	-\$(RM) my_loader_tie_pl.c my_loader_perlio_pl.c my_Dyna_pm.c
-	-\$(RM) *$o xyz.h
+	-\$(RM) *$o xyz.h perlxsi.c
 	-\$(RM) *.opt *.pdb
 	\$(MV) Makefile Makefile.old
 

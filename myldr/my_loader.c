@@ -98,6 +98,7 @@ int my_loader_init_perl()
     dTHX;
 
     char* file = __FILE__;
+    int done = 0;
 
     {
 #ifdef WIN32
@@ -108,27 +109,48 @@ int my_loader_init_perl()
 
         if( !my_arch_init( buffer ) )
             return 0;
-#elif defined(HAS_PROCSELFEXE) || defined(ABSOLUTE_PATH_WORKS)
-        SV* caret_x = get_sv( "\030", 0 );
 
-        if( !my_arch_init( SvPV_nolen( caret_x ) ) )
-            return 0;
+        done = 1;
 #elif defined(HAS_READLINK)
         SV* path = eval_pv( "( -l '/proc/self/exe' ) ?"
                             "    readlink '/proc/self/exe' :"
                             "    undef;", 0 );
-        if( !SvOK( path ) )
-            return 0;
-        if( !my_arch_init( SvPV_nolen( path ) ) )
+        if( SvOK( path ) )
         {
+            if( my_arch_init( SvPV_nolen( path ) ) )
+                done = 1;
             SvREFCNT_dec( path );
-            return 0;
         }
-       SvREFCNT_dec( path );
-#else
-    #error NO_PROC_SELF_EXE
 #endif
+
+        if( !done )
+        {
+            SV* caret_x = get_sv( "\030", 0 );
+
+            if( my_arch_init( SvPV_nolen( caret_x ) ) )
+                done = 1;
+        }
+
+        if( !done )
+        {
+            SV* path = eval_pv
+                ( "return $0 if -f $0;"
+                  "foreach ( split /\\Q" PATH_SEP "\\E/, $ENV{PATH} ) {"
+                  "    my $p = qq{$_/$0};"
+                  "    return $p if -f $p;"
+                  "}", 1 );
+
+            if( SvOK( path ) )
+            {
+                if( my_arch_init( SvPV_nolen( path ) ) )
+                    done = 1;
+                SvREFCNT_dec( path );
+            }
+        }
     }
+
+    if( !done )
+        return 0;
 
     /* get -w switch */
     {
