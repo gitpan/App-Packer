@@ -1,5 +1,8 @@
 Revision history for Perl extension App::Packer.
 
+0.07  Sat Nov 02 14:15:44 2002
+	- Fix compilation with perl 5.8.0/ithreads.
+
 0.06  Thu Oct 31 19:38:27 2002
 	- 0.05 was completely broken due to a silly typo in
 	  a last minute change.

@@ -181,13 +181,15 @@ void my_loader_cleanup_perl()
 void my_loader_cleanup()
 {
     int i;
+    dTHX;
+
 #ifdef WIN32
     if( gs_dll_handles )
     {
         for( i = 0; gs_dll_handles[i] != NULL; ++i )
         {
             if( !FreeLibrary( gs_dll_handles[i] ) )
-                printf( "Err in FreeLibrary\n" );
+                fprintf( stderr, "Error in FreeLibrary\n" );
         }
 
         free( gs_dll_handles );
@@ -197,8 +199,8 @@ void my_loader_cleanup()
     {
         int ret = remove( gs_temp_files[i] );
         if( ret != 0 )
-            printf( "remove '%s': %s", gs_temp_files[i],
-                    strerror( errno ) );
+            fprintf( stderr, "remove '%s': %s", gs_temp_files[i],
+                     strerror( errno ) );
         free( gs_temp_files[i] );
     }
 }

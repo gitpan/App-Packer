@@ -20,6 +20,10 @@ LIMITATIONS
 * see TODO.txt
 * many, many, many more
 
+BINARIES (Win32)
+
+ppm install http://wwwstud.dsi.unive.it/~mbarbon/p2e/App-Packer.ppd
+
 HINTS
 
   Some modules (notably Tk) do some magic that Module::Info can't
